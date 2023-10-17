@@ -23,6 +23,8 @@ n_msgs = data["Graph"]["comms"]["n_msgs"]
 # Extract node capacities from the JSON data
 node_capacity = data["Graph"]["capacity"]
 
+np_node_capacity = np.array(node_capacity)
+
 # Extract the number of nodes (M)
 M = data["Graph"]["M"]
 
@@ -41,7 +43,7 @@ for edge, msg_volume in zip(edges, volume):
 
 
 # Create the Gym environment with the adjacency matrix and node capacities
-env = CustomRLEnvironment(P, M, node_capacity, adj_matrix, n_msgs)
+env = CustomRLEnvironment(P, M, np_node_capacity, adj_matrix, n_msgs)
 model = DQN("MlpPolicy", env, verbose=1, learning_starts=5000, device='cpu')
 model.learn(total_timesteps=10000, log_interval=4)
 
