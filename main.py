@@ -2,14 +2,13 @@ import json
 import numpy as np
 import gymnasium as gym
 
-from stable_baselines3 import DQN
+
+from stable_baselines3 import DQN, PPO
 
 from mapping_custom_env import CustomRLEnvironment
 
-
-
 # Load the JSON data from the file
-with open('./binomial_4_2.json', 'r') as file:
+with open('./binomial_16_8.json', 'r') as file:
     data = json.load(file)
 
 # Extract the relevant information
@@ -44,22 +43,36 @@ for edge, msg_volume in zip(edges, volume):
 
 # Create the Gym environment with the adjacency matrix and node capacities
 env = CustomRLEnvironment(P, M, np_node_capacity, adj_matrix, n_msgs)
-model = DQN("MlpPolicy", env, verbose=1, learning_starts=5000, device='cpu')
-model.learn(total_timesteps=10000, log_interval=4)
-
-# Example usage:
-obs = env.reset(4)
-done = False
-total_reward = 0
-
-while not done:
-    action = env.action_space.sample()  # Replace this with your RL agent's action selection logic
-    next_obs, reward, done, info, _ = env.step(action)
-    total_reward += reward
-
-print("Total Reward:", total_reward)
 
 
 
+model = DQN(policy="MlpPolicy",
+            env=env,
+            #learning_rate=0.001,
+            learning_starts=5000,
+            tensorboard_log="./tensorboard_16_8/",
+            verbose=1,
+            device='cpu')
+trained = model.learn(total_timesteps=1000000, log_interval=5)
 
 
+terminated = False
+truncated = False
+
+obs, info = env.reset()
+print(obs.shape)
+while not (terminated or truncated):
+    action, _ = trained.predict(observation=obs, deterministic=True)
+    obs, reward, terminated, truncated, info = env.step(action)
+    print("Predict observation:", obs)
+
+placement = {}
+for proc, node in enumerate(obs, start=0):
+    if node not in placement:
+        placement[node] = []
+    placement[node].append(proc)
+
+for node, processes in placement.items():
+    print(f'Processes in node {node}: {processes}')
+
+print("Final assignm", obs)
