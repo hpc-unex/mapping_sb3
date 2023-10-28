@@ -3,9 +3,11 @@ import numpy as np
 import gymnasium as gym
 
 
-from stable_baselines3 import DQN, PPO
+from stable_baselines3 import DQN, PPO, A2C
+import tensorflow as tf
+from stable_baselines3.common.sb2_compat.rmsprop_tf_like import RMSpropTFLike
 
-from mapping_custom_env import CustomRLEnvironment
+from mapping_custom_env import CustomRLEnvironment, lrsched
 
 # Load the JSON data from the file
 with open('./binomial_16_8.json', 'r') as file:
@@ -48,12 +50,14 @@ env = CustomRLEnvironment(P, M, np_node_capacity, adj_matrix, n_msgs)
 
 model = DQN(policy="MlpPolicy",
             env=env,
-            #learning_rate=0.001,
-            learning_starts=5000,
+            #learning_rate=0.00003,
+            learning_rate=lrsched(),
+            #policy_kwargs=dict(optimizer_class=RMSpropTFLike),
+            learning_starts=25000,
             tensorboard_log="./tensorboard_16_8/",
             verbose=1,
             device='cpu')
-trained = model.learn(total_timesteps=1000000, log_interval=5)
+trained = model.learn(total_timesteps=200000, log_interval=1)
 
 
 terminated = False
@@ -62,7 +66,7 @@ truncated = False
 obs, info = env.reset()
 print(obs.shape)
 while not (terminated or truncated):
-    action, _ = trained.predict(observation=obs, deterministic=True)
+    action, _ = trained.predict(observation=obs, deterministic=False)
     obs, reward, terminated, truncated, info = env.step(action)
     print("Predict observation:", obs)
 
